@@ -1,0 +1,20 @@
+# Environment variables
+.env
+
+# Rust
+/target
+
+# Go
+/bin
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+
+# Node.js/Bun
+/node_modules
+
+# Other
+*.log
