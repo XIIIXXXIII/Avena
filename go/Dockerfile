@@ -3,9 +3,9 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN go build -o command-router .
+RUN go build -o gateway gateway.go
 
 FROM alpine:latest
 WORKDIR /app
-COPY --from=builder /app/command-router .
-CMD ["./command-router"]
+COPY --from=builder /app/gateway .
+CMD ["./gateway"]
