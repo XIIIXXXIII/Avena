@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  nats:
+    image: nats:2.10.11-alpine
+    command: -js
+    ports:
+      - "4222:4222" # Client port
+      - "8222:8222" # Monitoring port
+    networks:
+      - avena_network
+    restart: unless-stopped
+
+  gateway-watcher:
+    build:
+      context: ./rust
+      dockerfile: Dockerfile
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      NATS_URL: nats://nats:4222
+    networks:
+      - avena_network
+    depends_on:
+      - nats
+    restart: unless-stopped
+
+  # Placeholder for other services
+  # string-processor:
+  #   build:
+  #     context: ./cpp
+  #     dockerfile: Dockerfile
+  #   environment:
+  #     NATS_URL: nats://nats:4222
+  #   networks:
+  #     - avena_network
+  #   depends_on:
+  #     - nats
+  #   restart: unless-stopped
+
+  # command-router:
+  #   build:
+  #     context: ./go
+  #     dockerfile: Dockerfile
+  #   environment:
+  #     NATS_URL: nats://nats:4222
+  #   networks:
+  #     - avena_network
+  #   depends_on:
+  #     - nats
+  #   restart: unless-stopped
+
+networks:
+  avena_network:
+    driver: bridge
