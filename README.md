@@ -1,52 +1,31 @@
-# Avena Hyper-Bot: Polyglot Microservice Discord Engine
+# Avena: Distributed Polyglot Discord Architecture
 
-Avena Hyper-Bot — это высокопроизводительный Discord-бот нового поколения, спроектированный для работы в условиях экстремальных нагрузок. В отличие от традиционных монолитных ботов, Avena представляет собой распределенную систему микросервисов, способную обслуживать тысячи серверов с минимальными задержками и потреблением ресурсов.
+## Abstract
+Avena is a high-performance, distributed Discord engine designed for large-scale deployment across thousands of concurrent guilds. The system implements a microservice-based architecture to ensure minimal latency, optimal resource utilization, and absolute data privacy through a zero-persistence model.
 
-## 🚀 Основные особенности
+## Architectural Principles
+The system is decomposed into specialized, autonomous services, each implemented in a programming language optimized for its specific domain:
 
-*   **Полиглотная архитектура:** Система использует сильные стороны множества языков программирования. Критически важные компоненты написаны на **Rust** и **Go** для максимальной скорости, в то время как сложная логика и интеграции реализованы на **Python** и **Bun**.
-*   **Сверхбыстрая шина данных:** Все микросервисы взаимодействуют через **NATS Message Bus**, обеспечивая мгновенную передачу событий между компонентами системы.
-*   **Zero-Persistence (Приватность):** Бот работает по принципу отсутствия постоянного хранения данных. Мы не используем базы данных, что гарантирует максимальную приватность пользователей и отсутствие нагрузки на дисковую подсистему.
-*   **Эффективность:** Благодаря использованию системных языков (Rust, C++, Zig), бот потребляет в разы меньше оперативной памяти, чем аналоги на JavaScript или Python, при этом обеспечивая на порядок более высокую скорость обработки событий.
-*   **Масштабируемость:** Архитектура позволяет легко добавлять новые модули и масштабировать отдельные компоненты системы в зависимости от нагрузки.
+*   **Ingress Layer (Rust):** Handles high-concurrency WebSocket connections to the Discord Gateway.
+*   **Routing Layer (Go):** Manages asynchronous event distribution and command orchestration.
+*   **Logic Layer (Python):** Executes complex business logic and external API integrations.
+*   **Processing Layer (C++ / Zig):** Performs high-throughput string manipulation and content filtering.
+*   **Presentation Layer (Bun):** Constructs rich visual responses and manages webhook deliveries.
 
-## 🛠 Технологический стек
+## Communication Infrastructure
+Inter-service communication is facilitated by the NATS messaging protocol, utilizing binary-serialized payloads for maximum throughput. This decoupled design allows for independent scaling and fault isolation of individual components.
 
-*   **Rust:** Gateway-сервис (подключение к Discord WebSocket).
-*   **Go:** Ядро модерации и оркестрация команд.
-*   **Python:** Интеграции с внешними API и сложная бизнес-логика.
-*   **C++ / Zig:** Высокопроизводительная обработка строк и фильтрация контента.
-*   **Bun (TypeScript):** Формирование визуальных ответов и работа с вебхуками.
-*   **NATS:** Высокопроизводительный брокер сообщений.
-*   **Docker:** Контейнеризация и изоляция всех компонентов.
+## Data Persistence Policy
+Avena adheres to a strict zero-persistence policy. No permanent data storage or database systems are utilized. System state is either ephemeral (stored in-memory) or derived directly from the Discord API, ensuring total user privacy and minimal I/O overhead.
 
-## 📦 Структура проекта
+## Deployment
+The infrastructure is containerized using Docker, allowing for consistent deployment across heterogeneous environments.
 
-```
-avena/
-├── rust/      # Gateway-Watcher (Rust) - прием событий Discord
-├── go/        # Command-Router (Go) - логика и управление
-├── python/    # Logic-Engine (Python) - интеграции
-├── cpp/       # String-Processor (C++) - быстрая фильтрация
-├── bun/       # Embed-Builder (Bun) - визуал
-├── proto/     # Protobuf схемы для обмена данными
-└── docker/    # Конфигурации инфраструктуры
-```
-
-## ⚙️ Установка и запуск
-
-Бот поставляется в виде набора Docker-контейнеров, что делает процесс развертывания максимально простым.
-
-1.  Клонируйте репозиторий.
-2.  Создайте файл `.env` в корневой директории и добавьте ваш `DISCORD_TOKEN`.
-3.  Запустите систему:
+1.  Initialize environment configuration with `DISCORD_TOKEN`.
+2.  Execute orchestration via Docker Compose:
     ```bash
     docker compose up --build -d
     ```
 
-## 📄 Лицензия
-
-Проект распространяется под лицензией **GNU GPL v3**. Мы верим в открытый исходный код и свободу программного обеспечения.
-
----
-*Avena Hyper-Bot — создано для тех, кто ценит скорость, приватность и безупречную инженерию.*
+## Licensing
+This project is licensed under the GNU General Public License v3.0.
