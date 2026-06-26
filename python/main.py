@@ -1,7 +1,11 @@
 import asyncio
 import json
 import os
+import platform
+import psutil
 from nats.aio.client import Client as NATS
+
+OWNER_ID = "1459708545238044704"
 
 async def main():
     nc = NATS()
@@ -14,11 +18,25 @@ async def main():
         data = json.loads(msg.data.decode())
         content = data.get("content", "")
         channel_id = data.get("channel_id")
+        author_id = data.get("author", {}).get("id")
 
-        if content.startswith("/info"):
+        if content == "/info":
             response = {
                 "channel_id": channel_id,
-                "content": "Avena Hyper-Bot Status:\n- Architecture: Distributed Microservices\n- Nodes: Rust, Go, Python, C++\n- Database: None (Stateless)\n- Environment: Zotac Cluster"
+                "content": (
+                    "**Avena Hyper-Bot Node: Python**\n"
+                    f"OS: {platform.system()} {platform.release()}\n"
+                    f"CPU Usage: {psutil.cpu_percent()}%\n"
+                    f"RAM Usage: {psutil.virtual_memory().percent}%\n"
+                    "Architecture: Distributed Polyglot Cluster"
+                )
+            }
+            await nc.publish("discord.api.send_message", json.dumps(response).encode())
+
+        elif content == "/owner" and author_id == OWNER_ID:
+            response = {
+                "channel_id": channel_id,
+                "content": "Access Granted. Welcome back, Master XIIIXXXIII."
             }
             await nc.publish("discord.api.send_message", json.dumps(response).encode())
 
