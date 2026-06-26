@@ -9,38 +9,52 @@ OWNER_ID = "1459708545238044704"
 
 async def main():
     nc = NATS()
-    nats_url = os.getenv("NATS_URL", "nats://localhost:4222")
+    nats_url = os.getenv("NATS_URL", "nats://nats:4222")
     
     await nc.connect(nats_url)
     print(f"Logic-Engine (Python) connected to NATS at {nats_url}")
 
-    async def message_handler(msg):
+    async def interaction_handler(msg):
         data = json.loads(msg.data.decode())
-        content = data.get("content", "")
-        channel_id = data.get("channel_id")
-        author_id = data.get("author", {}).get("id")
+        command_name = data.get('data', {}).get('name')
+        user_id = data.get('member', {}).get('user', {}).get('id')
+        username = data.get('member', {}).get('user', {}).get('username')
+        interaction_token = data.get('token')
+        interaction_id = data.get('id')
 
-        if content == "/info":
-            response = {
-                "channel_id": channel_id,
-                "content": (
-                    "**Avena Hyper-Bot Node: Python**\n"
-                    f"OS: {platform.system()} {platform.release()}\n"
-                    f"CPU Usage: {psutil.cpu_percent()}%\n"
-                    f"RAM Usage: {psutil.virtual_memory().percent}%\n"
-                    "Architecture: Distributed Polyglot Cluster"
-                )
-            }
-            await nc.publish("discord.api.send_message", json.dumps(response).encode())
+        print(f"Processing command: /{command_name} from {username}")
 
-        elif content == "/owner" and author_id == OWNER_ID:
-            response = {
-                "channel_id": channel_id,
-                "content": "Access Granted. Welcome back, Master XIIIXXXIII."
-            }
-            await nc.publish("discord.api.send_message", json.dumps(response).encode())
+        response_content = "Unknown command"
 
-    await nc.subscribe("discord.event.message_create", cb=message_handler)
+        if command_name == "ping":
+            response_content = "🏓 Pong! Avena Polyglot Cluster is alive."
+        
+        elif command_name == "info":
+            cpu = psutil.cpu_percent()
+            ram = psutil.virtual_memory().percent
+            response_content = (
+                f"📊 **System Status**\n"
+                f"CPU: {cpu}%\n"
+                f"RAM: {ram}%\n"
+                f"OS: {platform.system()} {platform.release()}\n"
+                f"Arch: Multi-language (Go/Python/NATS)"
+            )
+        
+        elif command_name == "owner":
+            if user_id == OWNER_ID:
+                response_content = f"👑 Welcome back, Master {username}. All systems operational."
+            else:
+                response_content = "❌ Access denied. Only the creator can use this command."
+
+        # Send response back to Gateway
+        response_payload = {
+            "interaction_id": interaction_id,
+            "interaction_token": interaction_token,
+            "content": response_content
+        }
+        await nc.publish("discord.interaction.respond", json.dumps(response_payload).encode())
+
+    await nc.subscribe("discord.interaction.create", cb=interaction_handler)
 
     while True:
         await asyncio.sleep(1)
