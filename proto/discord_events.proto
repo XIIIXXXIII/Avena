@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package discord_events;
+
+// Basic Discord event structure
+message DiscordEvent {
+  string event_name = 1;
+  string payload_json = 2;
+  int64 sequence = 3;
+}
