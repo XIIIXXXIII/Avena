@@ -5,6 +5,10 @@ services:
     ports:
       - "4222:4222"
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
 
   gateway:
     build: ./go
@@ -14,6 +18,10 @@ services:
     depends_on:
       - nats
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   logic-engine:
     build: ./python
@@ -22,3 +30,7 @@ services:
     depends_on:
       - nats
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
