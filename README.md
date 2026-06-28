@@ -1,31 +1,80 @@
-# Avena: Distributed Polyglot Discord Architecture
+# Avena
 
-## Abstract
-Avena is a high-performance, distributed Discord engine designed for large-scale deployment across thousands of concurrent guilds. The system implements a microservice-based architecture to ensure minimal latency, optimal resource utilization, and absolute data privacy through a zero-persistence model.
+Многоязычный Discord-бот с микросервисной архитектурой. Без баз данных, полностью open-source.
 
-## Architectural Principles
-The system is decomposed into specialized, autonomous services, each implemented in a programming language optimized for its specific domain:
+## Архитектура
 
-*   **Ingress Layer (Rust):** Handles high-concurrency WebSocket connections to the Discord Gateway.
-*   **Routing Layer (Go):** Manages asynchronous event distribution and command orchestration.
-*   **Logic Layer (Python):** Executes complex business logic and external API integrations.
-*   **Processing Layer (C++ / Zig):** Performs high-throughput string manipulation and content filtering.
-*   **Presentation Layer (Bun):** Constructs rich visual responses and manages webhook deliveries.
+```
+Discord ←WebSocket→ [Go Gateway] ←NATS→ [Python Logic Engine]
+                                  ←NATS→ [Rust Moderation Executor] → Discord REST API
+                                  ←NATS→ [C++ String Filter]
+```
 
-## Communication Infrastructure
-Inter-service communication is facilitated by the NATS messaging protocol, utilizing binary-serialized payloads for maximum throughput. This decoupled design allows for independent scaling and fault isolation of individual components.
+| Сервис | Язык | Роль |
+|---|---|---|
+| `gateway` | Go | Discord WebSocket, регистрация команд, NATS-роутер |
+| `logic-engine` | Python | Обработка slash-команд, роутинг |
+| `executor` | Rust | Discord REST API (бан, кик, таймаут, etc.) |
+| `string-filter` | C++ | Контент-фильтр сообщений |
+| `nats` | — | Message bus (нет прямых связей между сервисами) |
 
-## Data Persistence Policy
-Avena adheres to a strict zero-persistence policy. No permanent data storage or database systems are utilized. System state is either ephemeral (stored in-memory) or derived directly from the Discord API, ensuring total user privacy and minimal I/O overhead.
+## Команды
 
-## Deployment
-The infrastructure is containerized using Docker, allowing for consistent deployment across heterogeneous environments.
+| Команда | Описание | Права |
+|---|---|---|
+| `/ping` | Проверка задержки | — |
+| `/info` | Системная информация | — |
+| `/owner` | Статус владельца (ephemeral) | — |
+| `/ban` | Забанить участника | Ban Members |
+| `/kick` | Кикнуть участника | Kick Members |
+| `/timeout` | Таймаут (1–40320 мин) | Moderate Members |
+| `/unban` | Разбанить по ID | Ban Members |
+| `/purge` | Удалить сообщения (1–100) | Manage Messages |
+| `/role` | Выдать/убрать роль | Manage Roles |
 
-1.  Initialize environment configuration with `DISCORD_TOKEN`.
-2.  Execute orchestration via Docker Compose:
-    ```bash
-    docker compose up --build -d
-    ```
+## Быстрый старт
 
-## Licensing
-This project is licensed under the GNU General Public License v3.0.
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/XIIIXXXIII/Avena/main/install.sh)
+```
+
+### Ручная установка
+
+```bash
+git clone https://github.com/XIIIXXXIII/Avena.git && cd Avena
+
+cat > .env << EOF
+DISCORD_TOKEN="ваш_токен"
+GUILD_ID="id_сервера_для_тестов"   # пусто = глобальные команды
+OWNER_ID="ваш_discord_id"
+EOF
+
+docker compose up -d --build
+```
+
+## Тестирование vs Продакшн
+
+- **`GUILD_ID` задан** → команды в этом сервере появляются **мгновенно** (удобно при разработке)  
+- **`GUILD_ID` пуст** → глобальные команды, обновляются **до 1 часа**
+
+## NATS Topics
+
+| Topic | Откуда | Куда |
+|---|---|---|
+| `discord.interaction.create` | Go | Python |
+| `discord.interaction.respond` | Python/Rust | Go |
+| `discord.moderation.*` | Python | Rust |
+| `discord.event.message_create` | Go | C++ |
+| `moderation.violation` | C++ | Python/Go |
+
+## Логи
+
+```bash
+docker compose logs -f            # все сервисы
+docker compose logs -f gateway    # только Go
+docker compose logs -f executor   # только Rust
+```
+
+## Лицензия
+
+MIT

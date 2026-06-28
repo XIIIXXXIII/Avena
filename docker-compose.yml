@@ -1,4 +1,6 @@
 services:
+
+  # ── NATS Message Bus ────────────────────────────────────────────────────
   nats:
     image: nats:2.10.11-alpine
     command: -js
@@ -10,21 +12,53 @@ services:
         limits:
           memory: 128M
 
+  # ── Go: Discord Gateway + регистрация команд ────────────────────────────
   gateway:
     build: ./go
     environment:
       DISCORD_TOKEN: ${DISCORD_TOKEN}
       NATS_URL: nats://nats:4222
+      GUILD_ID: ${GUILD_ID:-}       # задай для мгновенной регистрации при тесте
     depends_on:
       - nats
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 128M
 
+  # ── Python: Логика команд → роутинг в NATS ──────────────────────────────
   logic-engine:
     build: ./python
+    environment:
+      NATS_URL: nats://nats:4222
+      OWNER_ID: ${OWNER_ID:-}
+    depends_on:
+      - nats
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # ── Rust: Moderation Executor → Discord REST API ─────────────────────────
+  executor:
+    build: ./rust
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      NATS_URL: nats://nats:4222
+      RUST_LOG: info
+    depends_on:
+      - nats
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # ── C++: String Filter (контент-фильтр сообщений) ───────────────────────
+  string-filter:
+    build: ./cpp
     environment:
       NATS_URL: nats://nats:4222
     depends_on:
@@ -33,4 +67,4 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 64M

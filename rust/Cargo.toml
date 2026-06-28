@@ -1,14 +1,16 @@
 [package]
-name = "gateway-watcher"
-version = "0.1.0"
-edition = "2021"
+name        = "avena-executor"
+version     = "0.1.0"
+edition     = "2021"
+description = "Avena — Rust Moderation Executor (Discord REST via NATS)"
 
 [dependencies]
-tokio = { version = "1", features = ["full"] }
-discord_ws = "0.1.0"
-nats = "0.28.0"
-env_logger = "0.10.0"
-log = "0.4.17"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-reqwest = { version = "0.11", features = ["json"] }
+tokio            = { version = "1",    features = ["full"] }
+async-nats       = "0.35"
+reqwest          = { version = "0.11", features = ["json"] }
+serde            = { version = "1",    features = ["derive"] }
+serde_json       = "1"
+futures          = "0.3"
+chrono           = "0.4"
+tracing          = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
